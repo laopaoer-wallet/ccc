@@ -1,0 +1,15 @@
+{
+    "name": "Ubuntu Development Container",
+    "image": "ubuntu:latest",
+    
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {}, 
+        "ghcr.io/devcontainers/features/common-utils:1": {} 
+    },
+    
+    "runArgs": ["--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined"],
+    
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+    
+    "postCreateCommand": "apt-get update && apt-get install -y build-essential"
+}
