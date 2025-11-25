@@ -15,7 +15,7 @@
    ```bash
    npm install -g serve
    ```
-2. 启动服务器（需 HTTPS 或 localhost）：
+2. 启动服务器（需 HTTPS 或 localhost），并确保 `vendor/` 目录一并被托管：
    ```bash
    serve .
    ```
@@ -23,12 +23,15 @@
 
 > **提示**：若浏览器或部署环境无法使用 Service Worker（例如 `file://` 方式直接打开），则无法启用 `SharedArrayBuffer`，FFmpeg 也就无法运行。
 
-## 技术栈
+## 本地依赖
 
-- 原生 HTML/CSS/JavaScript
-- [`@ffmpeg/ffmpeg`](https://github.com/ffmpegwasm/ffmpeg.wasm)
-- [`fflate`](https://github.com/101arrowz/fflate)（用于打包 ZIP）
-- 自定义 COOP/COEP Service Worker
+项目已经将以下脚本放在 `vendor/` 目录，避免 COOP/COEP 限制导致的跨域加载失败：
+
+- `vendor/ffmpeg/`：`@ffmpeg/ffmpeg@0.12.6` 的 UMD 版本。
+- `vendor/ffmpeg-core/`：`@ffmpeg/core@0.12.6`（包含 `ffmpeg-core.js/.wasm`）。
+- `vendor/fflate/`：`fflate@0.8.2` UMD 版。
+
+部署时务必连同 `vendor/` 上传，否则浏览器会因 `COEP: require-corp` 拦截远程 CDN 资源。
 
 ## 已知限制
 

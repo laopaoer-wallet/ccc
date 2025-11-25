@@ -68,6 +68,11 @@
             border-color: #b21f1f;
         }
 
+        .upload-area.disabled {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
         .upload-icon {
             font-size: 60px;
             color: #1a2a6c;
@@ -359,8 +364,8 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.min.js"></script>
+    <script src="./vendor/ffmpeg/umd/ffmpeg.js"></script>
+    <script src="./vendor/fflate/index.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const uploadArea = document.getElementById('uploadArea');
@@ -466,7 +471,7 @@
                     const { createFFmpeg, fetchFile } = FFmpeg;
                     ffmpegInstance = createFFmpeg({
                         log: true,
-                        corePath: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js',
+                        corePath: './vendor/ffmpeg-core/umd/ffmpeg-core.js',
                         progress: ({ ratio }) => {
                             const percent = Math.min(100, Math.max(0, Math.round(ratio * 100)));
                             progressBar.style.width = `${percent}%`;
