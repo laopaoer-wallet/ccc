@@ -1,0 +1,12 @@
+{
+  "name": "ffmpeg-wasm-hls",
+  "version": "1.0.0",
+  "description": "使用 ffmpeg.wasm 将 MP4 转换为 HLS (m3u8) 的示例脚本",
+  "type": "module",
+  "scripts": {
+    "convert": "node src/convert.js"
+  },
+  "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.7"
+  }
+}
