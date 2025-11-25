@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MP4 转 M3U8 在线转换工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(to right, #1a2a6c, #b21f1f);
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 16px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .upload-area {
+            border: 3px dashed #1a2a6c;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s;
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+
+        .upload-area:hover,
+        .upload-area.dragover {
+            background-color: #e9ecef;
+            border-color: #b21f1f;
+        }
+
+        .upload-icon {
+            font-size: 60px;
+            color: #1a2a6c;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .btn {
+            background: linear-gradient(to right, #1a2a6c, #b21f1f);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 10px 5px;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .progress-container {
+            margin: 30px 0;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress {
+            height: 100%;
+            background: linear-gradient(to right, #1a2a6c, #b21f1f);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 16px;
+            color: #333;
+        }
+
+        .result {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .result h3 {
+            color: #1a2a6c;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .download-btn {
+            background: linear-gradient(to right, #28a745, #20c997);
+            display: block;
+            width: 100%;
+            text-align: center;
+            text-decoration: none;
+            font-size: 18px;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .info {
+            background-color: #e7f3ff;
+            border-left: 4px solid #1a2a6c;
+            padding: 15px;
+            margin-top: 30px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .info h4 {
+            color: #1a2a6c;
+            margin-bottom: 10px;
+        }
+
+        .info p {
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .alert {
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 25px;
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            display: none;
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        @media (max-width: 600px) {
+            .content {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .upload-text {
+                font-size: 16px;
+            }
+        }
+    </style>
+    <script>
+        (function registerCrossOriginIsolation() {
+            if (window.crossOriginIsolated || !('serviceWorker' in navigator)) {
+                return;
+            }
+
+            let alreadyReloaded = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (alreadyReloaded) return;
+                alreadyReloaded = true;
+                window.location.reload();
+            });
+
+            navigator.serviceWorker
+                .register('./coi-serviceworker.js')
+                .then((registration) => {
+                    console.info('COOP/COEP service worker 已注册:', registration.scope);
+                })
+                .catch((error) => {
+                    console.error('无法注册 COOP/COEP service worker:', error);
+                });
+        })();
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>MP4 转 M3U8 在线转换工具</h1>
+            <p>使用 FFmpeg 在浏览器中直接转换视频格式，无需上传到服务器</p>
+        </div>
+
+        <div class="content">
+            <div class="alert" id="isolationAlert">
+                <strong>需要启用 SharedArrayBuffer</strong>
+                <p>首次打开页面时会自动注册 Service Worker 以开启跨源隔离。若按钮无法点击，请等待页面自动刷新或手动刷新一次。</p>
+            </div>
+
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">拖放 MP4 文件到此处，或点击选择文件</div>
+                <p>支持 MP4 格式视频文件</p>
+                <input type="file" id="fileInput" class="file-input" accept=".mp4,video/mp4">
+                <button class="btn" id="selectFileBtn">选择文件</button>
+            </div>
+
+            <div class="progress-container" id="progressContainer">
+                <div class="progress-bar">
+                    <div class="progress" id="progressBar"></div>
+                </div>
+                <div class="progress-text" id="progressText">准备中...</div>
+            </div>
+
+            <button class="btn" id="convertBtn" disabled>开始转换</button>
+
+            <div class="result" id="result">
+                <h3>转换完成！</h3>
+                <p>已自动打包生成的 M3U8 及 TS 分片文件，点击下方按钮下载：</p>
+                <a href="#" class="btn download-btn" id="downloadBtn">下载文件</a>
+                <p style="margin-top: 15px; font-size: 14px; color: #666;">
+                    注意：解压后保持 M3U8 与 TS 文件在同一目录，可直接被 HLS 播放器读取。
+                </p>
+            </div>
+
+            <div class="info">
+                <h4>关于 M3U8 格式</h4>
+                <p>
+                    M3U8 是 HLS（HTTP Live Streaming）协议使用的索引文件格式，它将视频分割成多个 TS 分片文件，
+                    适合用于流媒体传输。转换后的 M3U8 需要与对应的 TS 分片一起使用，建议将所有文件放在同一目录下。
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const selectFileBtn = document.getElementById('selectFileBtn');
+            const convertBtn = document.getElementById('convertBtn');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressBar = document.getElementById('progressBar');
+            const progressText = document.getElementById('progressText');
+            const result = document.getElementById('result');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const isolationAlert = document.getElementById('isolationAlert');
+
+            let selectedFile = null;
+            let ffmpegInstance = null;
+            let ffmpegLoaded = false;
+            let converting = false;
+            let currentDownloadUrl = null;
+
+            const ensureSharedArrayBuffer = () => {
+                const available = typeof window.SharedArrayBuffer === 'function';
+                isolationAlert.style.display = available ? 'none' : 'block';
+                if (!available) {
+                    convertBtn.disabled = true;
+                } else if (!converting) {
+                    convertBtn.disabled = !selectedFile;
+                }
+                return available;
+            };
+
+            ensureSharedArrayBuffer();
+            setTimeout(ensureSharedArrayBuffer, 1500);
+
+            const resetDownloadLink = () => {
+                if (currentDownloadUrl) {
+                    URL.revokeObjectURL(currentDownloadUrl);
+                    currentDownloadUrl = null;
+                }
+            };
+
+            const handleFileSelection = (file) => {
+                if (file && file.type.includes('mp4')) {
+                    selectedFile = file;
+                    uploadArea.innerHTML = `
+                        <div class="upload-icon">✅</div>
+                        <div class="upload-text">已选择文件: ${file.name}</div>
+                        <p>文件大小: ${(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                        <button class="btn" id="changeFileBtn">更换文件</button>
+                    `;
+
+                    document.getElementById('changeFileBtn').addEventListener('click', () => fileInput.click());
+                    if (ensureSharedArrayBuffer() && !converting) {
+                        convertBtn.disabled = false;
+                    }
+                } else {
+                    alert('请选择有效的 MP4 文件');
+                }
+            };
+
+            selectFileBtn.addEventListener('click', () => fileInput.click());
+
+            fileInput.addEventListener('change', (event) => {
+                if (event.target.files.length > 0) {
+                    handleFileSelection(event.target.files[0]);
+                }
+            });
+
+            uploadArea.addEventListener('dragover', (event) => {
+                event.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (event) => {
+                event.preventDefault();
+                uploadArea.classList.remove('dragover');
+                if (event.dataTransfer.files.length > 0) {
+                    handleFileSelection(event.dataTransfer.files[0]);
+                }
+            });
+
+            const ensureFFmpeg = async () => {
+                if (!ffmpegInstance) {
+                    const { createFFmpeg, fetchFile } = FFmpeg;
+                    ffmpegInstance = createFFmpeg({
+                        log: true,
+                        corePath: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js',
+                        progress: ({ ratio }) => {
+                            const percent = Math.min(100, Math.max(0, Math.round(ratio * 100)));
+                            progressBar.style.width = `${percent}%`;
+                            progressText.textContent = `转换中: ${percent}%`;
+                        }
+                    });
+                    ffmpegInstance.fetchFile = fetchFile;
+                }
+
+                if (!ffmpegLoaded) {
+                    progressContainer.style.display = 'block';
+                    progressBar.style.width = '5%';
+                    progressText.textContent = '初始化 FFmpeg...';
+                    await ffmpegInstance.load();
+                    ffmpegLoaded = true;
+                }
+            };
+
+            const cleanupFiles = (files) => {
+                try {
+                    ffmpegInstance.FS('unlink', 'input.mp4');
+                } catch (err) {
+                    console.debug('input.mp4 清理失败: ', err);
+                }
+                files.forEach((file) => {
+                    try {
+                        ffmpegInstance.FS('unlink', file);
+                    } catch (err) {
+                        console.debug(`清理 ${file} 失败: `, err);
+                    }
+                });
+            };
+
+            convertBtn.addEventListener('click', async () => {
+                if (!selectedFile || converting) return;
+                if (!ensureSharedArrayBuffer()) {
+                    alert('浏览器暂未启用 SharedArrayBuffer，请刷新后再试。');
+                    return;
+                }
+
+                converting = true;
+                convertBtn.disabled = true;
+                result.style.display = 'none';
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '0%';
+                progressText.textContent = '准备中...';
+
+                try {
+                    await ensureFFmpeg();
+
+                    progressText.textContent = '读取视频文件...';
+                    ffmpegInstance.FS('writeFile', 'input.mp4', await ffmpegInstance.fetchFile(selectedFile));
+
+                    progressText.textContent = '执行 HLS 转码...';
+                    await ffmpegInstance.run(
+                        '-i', 'input.mp4',
+                        '-c:v', 'libx264',
+                        '-preset', 'veryfast',
+                        '-c:a', 'aac',
+                        '-b:a', '128k',
+                        '-movflags', 'faststart',
+                        '-hls_time', '6',
+                        '-hls_list_size', '0',
+                        '-hls_segment_filename', 'segment%03d.ts',
+                        'playlist.m3u8'
+                    );
+
+                    progressText.textContent = '打包输出文件...';
+                    const playlistData = ffmpegInstance.FS('readFile', 'playlist.m3u8');
+                    const generatedFiles = ffmpegInstance.FS('readdir', '/')
+                        .filter((name) => name.startsWith('segment') && name.endsWith('.ts'));
+
+                    if (generatedFiles.length === 0) {
+                        throw new Error('未生成 TS 分片，请尝试更短的视频或重新转换。');
+                    }
+
+                    const zipEntries = {};
+                    const baseName = selectedFile.name.replace(/\.mp4$/i, '');
+                    zipEntries[`${baseName}/playlist.m3u8`] = playlistData;
+
+                    generatedFiles.forEach((fileName) => {
+                        zipEntries[`${baseName}/${fileName}`] = ffmpegInstance.FS('readFile', fileName);
+                    });
+
+                    const zipped = fflate.zipSync(zipEntries, { level: 6 });
+                    resetDownloadLink();
+                    currentDownloadUrl = URL.createObjectURL(new Blob([zipped], { type: 'application/zip' }));
+
+                    downloadBtn.href = currentDownloadUrl;
+                    downloadBtn.download = `${baseName}-hls.zip`;
+                    downloadBtn.textContent = `下载 ${baseName}-hls.zip`;
+
+                    progressBar.style.width = '100%';
+                    progressText.textContent = '转换完成！';
+                    result.style.display = 'block';
+
+                    cleanupFiles(['playlist.m3u8', ...generatedFiles]);
+                } catch (error) {
+                    console.error('转换错误:', error);
+                    progressText.textContent = '转换失败，请重试';
+                    progressBar.style.background = '#dc3545';
+                    alert(`转换失败：${error.message}`);
+                } finally {
+                    converting = false;
+                    if (selectedFile && ensureSharedArrayBuffer()) {
+                        convertBtn.disabled = false;
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
