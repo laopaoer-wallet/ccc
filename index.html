@@ -207,7 +207,15 @@
     </style>
     <script>
         (function registerCrossOriginIsolation() {
-            if (window.crossOriginIsolated || !('serviceWorker' in navigator)) {
+            const canUseServiceWorker =
+                window.isSecureContext &&
+                ['https:', 'http:'].includes(window.location.protocol) &&
+                'serviceWorker' in navigator;
+
+            if (!canUseServiceWorker || window.crossOriginIsolated) {
+                if (!canUseServiceWorker) {
+                    window.__coiStatus = { ok: false, reason: 'Service Worker 仅能在 HTTPS 或 localhost 环境注册。' };
+                }
                 return;
             }
 
@@ -221,9 +229,11 @@
             navigator.serviceWorker
                 .register('./coi-serviceworker.js')
                 .then((registration) => {
+                    window.__coiStatus = { ok: true };
                     console.info('COOP/COEP service worker 已注册:', registration.scope);
                 })
                 .catch((error) => {
+                    window.__coiStatus = { ok: false, reason: error?.message || '未知错误' };
                     console.error('无法注册 COOP/COEP service worker:', error);
                 });
         })();
@@ -299,6 +309,9 @@
             let converting = false;
             let currentDownloadUrl = null;
 
+            const serviceWorkerCapable =
+                window.isSecureContext && ['https:', 'http:'].includes(window.location.protocol);
+
             const ensureSharedArrayBuffer = () => {
                 const available = typeof window.SharedArrayBuffer === 'function';
                 isolationAlert.style.display = available ? 'none' : 'block';
@@ -309,6 +322,19 @@
                 }
                 return available;
             };
+
+            if (!serviceWorkerCapable) {
+                isolationAlert.style.display = 'block';
+                isolationAlert.innerHTML = `
+                    <strong>需要通过本地服务器访问</strong>
+                    <p>浏览器要求在 HTTPS 或 localhost 环境下才能注册 Service Worker，以启用 SharedArrayBuffer。
+                    请使用 <code>serve .</code> 或任意静态服务器后，通过 http://localhost 访问本页面。</p>
+                `;
+                convertBtn.disabled = true;
+                selectFileBtn.disabled = true;
+                uploadArea.classList.add('disabled');
+                return;
+            }
 
             ensureSharedArrayBuffer();
             setTimeout(ensureSharedArrayBuffer, 1500);
