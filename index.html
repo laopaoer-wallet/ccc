@@ -219,6 +219,66 @@
                 return;
             }
 
+            const inlineServiceWorkerSource = `
+                const POLICY_HEADERS = [
+                    ['Cross-Origin-Embedder-Policy', 'require-corp'],
+                    ['Cross-Origin-Opener-Policy', 'same-origin']
+                ];
+
+                const addIsolationHeaders = (response) => {
+                    const newHeaders = new Headers(response.headers);
+                    POLICY_HEADERS.forEach(([key, value]) => newHeaders.set(key, value));
+                    return newHeaders;
+                };
+
+                self.addEventListener('install', (event) => {
+                    event.waitUntil(self.skipWaiting());
+                });
+
+                self.addEventListener('activate', (event) => {
+                    event.waitUntil(self.clients.claim());
+                });
+
+                self.addEventListener('fetch', (event) => {
+                    const { request } = event;
+                    if (request.method !== 'GET') {
+                        return;
+                    }
+
+                    const requestUrl = new URL(request.url);
+                    if (requestUrl.origin !== self.location.origin) {
+                        return;
+                    }
+
+                    event.respondWith((async () => {
+                        try {
+                            const response = await fetch(request);
+                            if (!response || response.status === 0 || response.type === 'opaqueredirect') {
+                                return response;
+                            }
+
+                            const headers = addIsolationHeaders(response);
+                            return new Response(response.body, {
+                                status: response.status,
+                                statusText: response.statusText,
+                                headers
+                            });
+                        } catch (error) {
+                            console.error('[coi] 代理失败:', error);
+                            return fetch(request);
+                        }
+                    })());
+                });
+            `;
+
+            const registerInlineServiceWorker = () => {
+                const blob = new Blob([inlineServiceWorkerSource], { type: 'text/javascript' });
+                const url = URL.createObjectURL(blob);
+                return navigator.serviceWorker
+                    .register(url)
+                    .finally(() => setTimeout(() => URL.revokeObjectURL(url), 0));
+            };
+
             let alreadyReloaded = false;
             navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (alreadyReloaded) return;
@@ -233,8 +293,19 @@
                     console.info('COOP/COEP service worker 已注册:', registration.scope);
                 })
                 .catch((error) => {
-                    window.__coiStatus = { ok: false, reason: error?.message || '未知错误' };
-                    console.error('无法注册 COOP/COEP service worker:', error);
+                    console.warn('静态 Service Worker 注册失败，尝试内联注册:', error);
+                    registerInlineServiceWorker()
+                        .then((registration) => {
+                            window.__coiStatus = { ok: true, inline: true };
+                            console.info('内联 COOP/COEP service worker 已注册:', registration.scope);
+                        })
+                        .catch((inlineError) => {
+                            window.__coiStatus = {
+                                ok: false,
+                                reason: inlineError?.message || error?.message || '未知错误'
+                            };
+                            console.error('无法注册任何 COOP/COEP service worker:', inlineError);
+                        });
                 });
         })();
     </script>
